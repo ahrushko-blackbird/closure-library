@@ -449,12 +449,15 @@ goog.ui.PopupMenu.prototype.showWithPosition = function(
 
 /**
  * Show the menu at a given attached target.
- * @param {!Object} target Popup target.
+ * @param {Object} target Popup target.
  * @param {number} x The client-X associated with the show event.
  * @param {number} y The client-Y associated with the show event.
  * @protected
  */
 goog.ui.PopupMenu.prototype.showMenu = function(target, x, y) {
+  if (!target) {
+    return;
+  }
   var position = goog.isDef(target.targetCorner_) ?
       new goog.positioning.AnchoredViewportPosition(
           target.element_, target.targetCorner_, true) :

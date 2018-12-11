@@ -38,7 +38,6 @@ goog.require('goog.iter.StopIteration');
  *     will be used as key-value pairs.
  * @constructor
  * @template K, V
- * @deprecated This type is misleading: use ES6 Map instead.
  */
 goog.structs.Map = function(opt_map, var_args) {
 
