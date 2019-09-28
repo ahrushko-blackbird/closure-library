@@ -54,14 +54,15 @@ goog.require('goog.userAgent');
  * @define {boolean} Whether we know at compile time that the browser is in
  * quirks mode.
  */
-goog.define('goog.dom.ASSUME_QUIRKS_MODE', false);
+goog.dom.ASSUME_QUIRKS_MODE = goog.define('goog.dom.ASSUME_QUIRKS_MODE', false);
 
 
 /**
  * @define {boolean} Whether we know at compile time that the browser is in
  * standards compliance mode.
  */
-goog.define('goog.dom.ASSUME_STANDARDS_MODE', false);
+goog.dom.ASSUME_STANDARDS_MODE =
+    goog.define('goog.dom.ASSUME_STANDARDS_MODE', false);
 
 
 /**
@@ -126,7 +127,7 @@ goog.dom.getElement = function(element) {
  * @private
  */
 goog.dom.getElementHelper_ = function(doc, element) {
-  return goog.isString(element) ? doc.getElementById(element) : element;
+  return typeof element === 'string' ? doc.getElementById(element) : element;
 };
 
 
@@ -194,11 +195,9 @@ goog.dom.getElementsByTagName = function(tagName, opt_parent) {
  * (`querySelectorAll`, `getElementsByTagName` or
  * `getElementsByClassName`) where possible. This function
  * is a useful, if limited, way of collecting a list of DOM elements
- * with certain characteristics.  `goog.dom.query` offers a
+ * with certain characteristics.  `querySelectorAll` offers a
  * more powerful and general solution which allows matching on CSS3
- * selector expressions, but at increased cost in code size. If all you
- * need is particular tags belonging to a single class, this function
- * is fast and sleek.
+ * selector expressions.
  *
  * Note that tag names are case sensitive in the SVG namespace, and this
  * function converts opt_tag to uppercase for comparisons. For queries in the
@@ -206,7 +205,7 @@ goog.dom.getElementsByTagName = function(tagName, opt_parent) {
  * https://bugzilla.mozilla.org/show_bug.cgi?id=963870
  * https://bugs.webkit.org/show_bug.cgi?id=83438
  *
- * @see {goog.dom.query}
+ * @see {https://developer.mozilla.org/en-US/docs/Web/API/Document/querySelectorAll}
  *
  * @param {(string|?goog.dom.TagName<T>)=} opt_tag Element tag name.
  * @param {?string=} opt_class Optional class name.
@@ -246,7 +245,7 @@ goog.dom.getElementByTagNameAndClass = function(opt_tag, opt_class, opt_el) {
 /**
  * Returns a static, array-like list of the elements with the provided
  * className.
- * @see {goog.dom.query}
+ *
  * @param {string} className the name of the class to look for.
  * @param {(Document|Element)=} opt_el Optional element to look in.
  * @return {!IArrayLike<!Element>} The items found with the class name provided.
@@ -263,7 +262,7 @@ goog.dom.getElementsByClass = function(className, opt_el) {
 
 /**
  * Returns the first element with the provided className.
- * @see {goog.dom.query}
+ *
  * @param {string} className the name of the class to look for.
  * @param {Element|Document=} opt_el Optional element to look in.
  * @return {Element} The first item with the class name provided.
@@ -284,7 +283,7 @@ goog.dom.getElementByClass = function(className, opt_el) {
 /**
  * Ensures an element with the given className exists, and then returns the
  * first element with the provided className.
- * @see {goog.dom.query}
+ *
  * @param {string} className the name of the class to look for.
  * @param {!Element|!Document=} opt_root Optional element or document to look
  *     in.
@@ -790,8 +789,8 @@ goog.dom.getWindow_ = function(doc) {
  * createDom(goog.dom.TagName.P));</code> would return a div with two child
  * paragraphs
  *
- * For passing properties, please see {@link goog.dom.setProperties} for more
- * information.
+ * This function uses {@link goog.dom.setProperties} to set attributes: the
+ * `opt_attributes` parameter follows the same rules.
  *
  * @param {string|!goog.dom.TagName<T>} tagName Tag to create.
  * @param {?Object|?Array<string>|string=} opt_attributes If object, then a map
@@ -852,10 +851,10 @@ goog.dom.createDom_ = function(doc, args) {
     tagName = tagNameArr.join('');
   }
 
-  var element = doc.createElement(tagName);
+  var element = goog.dom.createElement_(doc, tagName);
 
   if (attributes) {
-    if (goog.isString(attributes)) {
+    if (typeof attributes === 'string') {
       element.className = attributes;
     } else if (goog.isArray(attributes)) {
       element.className = attributes.join(' ');
@@ -885,7 +884,7 @@ goog.dom.append_ = function(doc, parent, args, startIndex) {
     // TODO(user): More coercion, ala MochiKit?
     if (child) {
       parent.appendChild(
-          goog.isString(child) ? doc.createTextNode(child) : child);
+          typeof child === 'string' ? doc.createTextNode(child) : child);
     }
   }
 
@@ -951,7 +950,9 @@ goog.dom.createElement = function(name) {
  * @private
  */
 goog.dom.createElement_ = function(doc, name) {
-  return doc.createElement(String(name));
+  name = String(name);
+  if (doc.contentType === 'application/xhtml+xml') name = name.toLowerCase();
+  return doc.createElement(name);
 };
 
 
@@ -1343,7 +1344,7 @@ goog.dom.getChildren = function(element) {
  * @return {Element} The first child node of `node` that is an element.
  */
 goog.dom.getFirstElementChild = function(node) {
-  if (goog.isDef(node.firstElementChild)) {
+  if (node.firstElementChild !== undefined) {
     return /** @type {!Element} */ (node).firstElementChild;
   }
   return goog.dom.getNextElementNode_(node.firstChild, true);
@@ -1356,7 +1357,7 @@ goog.dom.getFirstElementChild = function(node) {
  * @return {Element} The last child node of `node` that is an element.
  */
 goog.dom.getLastElementChild = function(node) {
-  if (goog.isDef(node.lastElementChild)) {
+  if (node.lastElementChild !== undefined) {
     return /** @type {!Element} */ (node).lastElementChild;
   }
   return goog.dom.getNextElementNode_(node.lastChild, false);
@@ -1369,7 +1370,7 @@ goog.dom.getLastElementChild = function(node) {
  * @return {Element} The next sibling of `node` that is an element.
  */
 goog.dom.getNextElementSibling = function(node) {
-  if (goog.isDef(node.nextElementSibling)) {
+  if (node.nextElementSibling !== undefined) {
     return /** @type {!Element} */ (node).nextElementSibling;
   }
   return goog.dom.getNextElementNode_(node.nextSibling, true);
@@ -1383,7 +1384,7 @@ goog.dom.getNextElementSibling = function(node) {
  *     an element.
  */
 goog.dom.getPreviousElementSibling = function(node) {
-  if (goog.isDef(node.previousElementSibling)) {
+  if (node.previousElementSibling !== undefined) {
     return /** @type {!Element} */ (node).previousElementSibling;
   }
   return goog.dom.getNextElementNode_(node.previousSibling, false);
@@ -1714,6 +1715,20 @@ goog.dom.findCommonAncestor = function(var_args) {
 
 
 /**
+ * Returns whether node is in a document or detached. Throws an error if node
+ * itself is a document. This specifically handles two cases beyond naive use of
+ * builtins: (1) it works correctly in IE, and (2) it works for elements from
+ * different documents/iframes. If neither of these considerations are relevant
+ * then a simple `document.contains(node)` may be used instead.
+ * @param {!Node} node
+ * @return {boolean}
+ */
+goog.dom.isInDocument = function(node) {
+  return (node.ownerDocument.compareDocumentPosition(node) & 16) == 16;
+};
+
+
+/**
  * Returns the owner document for a node.
  * @param {Node|Window} node The node to get the document for.
  * @return {!Document} The document owning the node.
@@ -1790,7 +1805,7 @@ goog.dom.setTextContent = function(node, text) {
 
 
 /**
- * Gets the outerHTML of a node, which islike innerHTML, except that it
+ * Gets the outerHTML of a node, which is like innerHTML, except that it
  * actually contains the HTML of the node itself.
  * @param {Element} element The element to get the HTML of.
  * @return {string} The outerHTML of the given element.
@@ -1812,13 +1827,13 @@ goog.dom.getOuterHtml = function(element) {
 
 
 /**
- * Finds the first descendant node that matches the filter function, using
- * a depth first search. This function offers the most general purpose way
- * of finding a matching element. You may also wish to consider
- * `goog.dom.query` which can express many matching criteria using
- * CSS selector expressions. These expressions often result in a more
- * compact representation of the desired result.
- * @see goog.dom.query
+ * Finds the first descendant node that matches the filter function, using depth
+ * first search. This function offers the most general purpose way of finding a
+ * matching element.
+ *
+ * Prefer using `querySelector` if the matching criteria can be expressed as a
+ * CSS selector, or `goog.dom.findElement` if you would filter for `nodeType ==
+ * Node.ELEMENT_NODE`.
  *
  * @param {Node} root The root of the tree to search.
  * @param {function(Node) : boolean} p The filter function.
@@ -1832,13 +1847,14 @@ goog.dom.findNode = function(root, p) {
 
 
 /**
- * Finds all the descendant nodes that match the filter function, using a
- * a depth first search. This function offers the most general-purpose way
- * of finding a set of matching elements. You may also wish to consider
- * `goog.dom.query` which can express many matching criteria using
- * CSS selector expressions. These expressions often result in a more
- * compact representation of the desired result.
-
+ * Finds all the descendant nodes that match the filter function, using depth
+ * first search. This function offers the most general-purpose way
+ * of finding a set of matching elements.
+ *
+ * Prefer using `querySelectorAll` if the matching criteria can be expressed as
+ * a CSS selector, or `goog.dom.findElements` if you would filter for
+ * `nodeType == Node.ELEMENT_NODE`.
+ *
  * @param {Node} root The root of the tree to search.
  * @param {function(Node) : boolean} p The filter function.
  * @return {!Array<!Node>} The found nodes or an empty array if none are found.
@@ -1878,6 +1894,70 @@ goog.dom.findNodes_ = function(root, p, rv, findOne) {
     }
   }
   return false;
+};
+
+
+/**
+ * Finds the first descendant element (excluding `root`) that matches the filter
+ * function, using depth first search. Prefer using `querySelector` if the
+ * matching criteria can be expressed as a CSS selector.
+ *
+ * @param {!Element | !Document} root
+ * @param {function(!Element): boolean} pred Filter function.
+ * @return {?Element} First matching element or null if there is none.
+ */
+goog.dom.findElement = function(root, pred) {
+  var stack = goog.dom.getChildrenReverse_(root);
+  while (stack.length > 0) {
+    var next = stack.pop();
+    if (pred(next)) return next;
+    for (var c = next.lastElementChild; c; c = c.previousElementSibling) {
+      stack.push(c);
+    }
+  }
+  return null;
+};
+
+
+/**
+ * Finds all the descendant elements (excluding `root`) that match the filter
+ * function, using depth first search. Prefer using `querySelectorAll` if the
+ * matching criteria can be expressed as a CSS selector.
+ *
+ * @param {!Element | !Document} root
+ * @param {function(!Element): boolean} pred Filter function.
+ * @return {!Array<!Element>}
+ */
+goog.dom.findElements = function(root, pred) {
+  var result = [], stack = goog.dom.getChildrenReverse_(root);
+  while (stack.length > 0) {
+    var next = stack.pop();
+    if (pred(next)) result.push(next);
+    for (var c = next.lastElementChild; c; c = c.previousElementSibling) {
+      stack.push(c);
+    }
+  }
+  return result;
+};
+
+
+/**
+ * @param {!Element | !Document} node
+ * @return {!Array<!Element>} node's child elements in reverse order.
+ * @private
+ */
+goog.dom.getChildrenReverse_ = function(node) {
+  // document.lastElementChild doesn't exist in IE9; fall back to
+  // documentElement.
+  if (node.nodeType == goog.dom.NodeType.DOCUMENT) {
+    return [node.documentElement];
+  } else {
+    var children = [];
+    for (var c = node.lastElementChild; c; c = c.previousElementSibling) {
+      children.push(c);
+    }
+    return children;
+  }
 };
 
 
@@ -1981,7 +2061,7 @@ goog.dom.hasSpecifiedTabIndex_ = function(element) {
   // 'tabindex' attributeNode is specified. Otherwise check hasAttribute().
   if (goog.userAgent.IE && !goog.userAgent.isVersionOrHigher('9')) {
     var attrNode = element.getAttributeNode('tabindex');  // Must be lowercase!
-    return goog.isDefAndNotNull(attrNode) && attrNode.specified;
+    return attrNode != null && attrNode.specified;
   } else {
     return element.hasAttribute('tabindex');
   }
@@ -1997,7 +2077,7 @@ goog.dom.hasSpecifiedTabIndex_ = function(element) {
 goog.dom.isTabIndexFocusable_ = function(element) {
   var index = /** @type {!HTMLElement} */ (element).tabIndex;
   // NOTE: IE9 puts tabIndex in 16-bit int, e.g. -2 is 65534.
-  return goog.isNumber(index) && index >= 0 && index < 32768;
+  return typeof (index) === 'number' && index >= 0 && index < 32768;
 };
 
 
@@ -2008,11 +2088,12 @@ goog.dom.isTabIndexFocusable_ = function(element) {
  * @private
  */
 goog.dom.nativelySupportsFocus_ = function(element) {
-  return element.tagName == goog.dom.TagName.A ||
+  return (
+      element.tagName == goog.dom.TagName.A && element.hasAttribute('href') ||
       element.tagName == goog.dom.TagName.INPUT ||
       element.tagName == goog.dom.TagName.TEXTAREA ||
       element.tagName == goog.dom.TagName.SELECT ||
-      element.tagName == goog.dom.TagName.BUTTON;
+      element.tagName == goog.dom.TagName.BUTTON);
 };
 
 
@@ -2032,7 +2113,7 @@ goog.dom.hasNonZeroBoundingRect_ = function(element) {
   } else {
     rect = element.getBoundingClientRect();
   }
-  return goog.isDefAndNotNull(rect) && rect.height > 0 && rect.width > 0;
+  return rect != null && rect.height > 0 && rect.width > 0;
 };
 
 
@@ -2259,7 +2340,7 @@ goog.dom.getAncestorByTagNameAndClass = function(
   return /** @type {Element} */ (goog.dom.getAncestor(element, function(node) {
     return (!tagName || node.nodeName == tagName) &&
         (!opt_class ||
-         goog.isString(node.className) &&
+         typeof node.className === 'string' &&
              goog.array.contains(node.className.split(/\s+/), opt_class));
   }, true, opt_maxSearchSteps));
 };
@@ -2351,7 +2432,7 @@ goog.dom.getActiveElement = function(doc) {
  */
 goog.dom.getPixelRatio = function() {
   var win = goog.dom.getWindow();
-  if (goog.isDef(win.devicePixelRatio)) {
+  if (win.devicePixelRatio !== undefined) {
     return win.devicePixelRatio;
   } else if (win.matchMedia) {
     // Should be for IE10 and FF6-17 (this basically clamps to lower)
@@ -2394,7 +2475,7 @@ goog.dom.matchesPixelRatio_ = function(pixelRatio) {
 /**
  * Gets '2d' context of a canvas. Shortcut for canvas.getContext('2d') with a
  * type information.
- * @param {!HTMLCanvasElement} canvas
+ * @param {!HTMLCanvasElement|!OffscreenCanvas} canvas
  * @return {!CanvasRenderingContext2D}
  */
 goog.dom.getCanvasContext2D = function(canvas) {
@@ -2504,8 +2585,6 @@ goog.dom.DomHelper.prototype.getElementsByTagName =
  * `getElementsByClassName`) where possible. The returned array is a live
  * NodeList or a static list depending on the code path taken.
  *
- * @see goog.dom.query
- *
  * @param {(string|?goog.dom.TagName<T>)=} opt_tag Element tag name or * for all
  *     tags.
  * @param {?string=} opt_class Optional class name.
@@ -2546,7 +2625,6 @@ goog.dom.DomHelper.prototype.getElementByTagNameAndClass = function(
 
 /**
  * Returns an array of all the elements with the provided className.
- * @see {goog.dom.query}
  * @param {string} className the name of the class to look for.
  * @param {Element|Document=} opt_el Optional element to look in.
  * @return {!IArrayLike<!Element>} The items found with the class name provided.
@@ -2559,7 +2637,6 @@ goog.dom.DomHelper.prototype.getElementsByClass = function(className, opt_el) {
 
 /**
  * Returns the first element we find matching the provided class name.
- * @see {goog.dom.query}
  * @param {string} className the name of the class to look for.
  * @param {(Element|Document)=} opt_el Optional element to look in.
  * @return {Element} The first item found with the class name provided.
@@ -2573,7 +2650,6 @@ goog.dom.DomHelper.prototype.getElementByClass = function(className, opt_el) {
 /**
  * Ensures an element with the given className exists, and then returns the
  * first element with the provided className.
- * @see {goog.dom.query}
  * @param {string} className the name of the class to look for.
  * @param {(!Element|!Document)=} opt_root Optional element or document to look
  *     in.
@@ -2590,7 +2666,6 @@ goog.dom.DomHelper.prototype.getRequiredElementByClass = function(
 /**
  * Alias for `getElementsByTagNameAndClass`.
  * @deprecated Use DomHelper getElementsByTagNameAndClass.
- * @see goog.dom.query
  *
  * @param {(string|?goog.dom.TagName<T>)=} opt_tag Element tag name.
  * @param {?string=} opt_class Optional class name.

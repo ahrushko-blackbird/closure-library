@@ -62,7 +62,7 @@ goog.tagUnsealableClass(goog.ui.AttachableMenu);
 
 /**
  * The currently selected element (mouse was moved over it or keyboard arrows)
- * @type {HTMLElement}
+ * @type {?HTMLElement}
  * @private
  */
 goog.ui.AttachableMenu.prototype.selectedElement_ = null;
@@ -247,7 +247,7 @@ goog.ui.AttachableMenu.prototype.getNextPrevItem = function(prev) {
   }
 
   // if no selected element, start from beginning or end
-  if (!goog.isDef(index)) {
+  if (index === undefined) {
     index = prev ? elementCount - 1 : 0;
   }
 

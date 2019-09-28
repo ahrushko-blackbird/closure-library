@@ -81,7 +81,7 @@ goog.ui.editor.LinkDialog = function(domHelper, link) {
 
   /**
    * Optional warning to show about email addresses.
-   * @type {goog.html.SafeHtml}
+   * @type {?goog.html.SafeHtml}
    * @private
    */
   this.emailWarning_ = null;
@@ -121,14 +121,14 @@ goog.ui.editor.LinkDialog = function(domHelper, link) {
 
   /**
    * InputHandler object to listen for changes in the url input field.
-   * @type {goog.events.InputHandler}
+   * @type {?goog.events.InputHandler}
    * @private
    */
   this.urlInputHandler_ = null;
 
   /**
    * InputHandler object to listen for changes in the email input field.
-   * @type {goog.events.InputHandler}
+   * @type {?goog.events.InputHandler}
    * @private
    */
   this.emailInputHandler_ = null;
@@ -136,28 +136,28 @@ goog.ui.editor.LinkDialog = function(domHelper, link) {
   /**
    * InputHandler object to listen for changes in the text to display input
    * field.
-   * @type {goog.events.InputHandler}
+   * @type {?goog.events.InputHandler}
    * @private
    */
   this.textInputHandler_ = null;
 
   /**
    * The tab bar where the url and email tabs are.
-   * @type {goog.ui.editor.TabPane}
+   * @type {?goog.ui.editor.TabPane}
    * @private
    */
   this.tabPane_ = null;
 
   /**
    * The div element holding the link's display text input.
-   * @type {HTMLDivElement}
+   * @type {?HTMLDivElement}
    * @private
    */
   this.textToDisplayDiv_ = null;
 
   /**
    * The input element holding the link's display text.
-   * @type {HTMLInputElement}
+   * @type {?HTMLInputElement}
    * @private
    */
   this.textToDisplayInput_ = null;
@@ -187,7 +187,7 @@ goog.ui.editor.LinkDialog = function(domHelper, link) {
   /**
    * The input element (checkbox) to indicate that the link should open in a new
    * window.
-   * @type {HTMLInputElement}
+   * @type {?HTMLInputElement}
    * @private
    */
   this.openInNewWindowCheckbox_ = null;
@@ -195,7 +195,7 @@ goog.ui.editor.LinkDialog = function(domHelper, link) {
   /**
    * The input element (checkbox) to indicate that the link should have
    * 'rel=nofollow' attribute.
-   * @type {HTMLInputElement}
+   * @type {?HTMLInputElement}
    * @private
    */
   this.relNoFollowCheckbox_ = null;
@@ -203,10 +203,17 @@ goog.ui.editor.LinkDialog = function(domHelper, link) {
   /**
    * Whether to stop leaking the page's url via the referrer header when the
    * "test this link" link is clicked.
-   * @type {boolean}
-   * @private
+   * @private {boolean}
    */
   this.stopReferrerLeaks_ = false;
+
+  /**
+   * Whether to remove access to the current window object in the newly created
+   * window when the "test this link" is clicked, since it can be used to launch
+   * a reverse tabnabbing attack.
+   * @private {boolean}
+   */
+  this.stopTabNabbing_ = false;
 };
 goog.inherits(goog.ui.editor.LinkDialog, goog.ui.editor.AbstractDialog);
 
@@ -392,6 +399,18 @@ goog.ui.editor.LinkDialog.prototype.setTextToDisplayVisible = function(
  */
 goog.ui.editor.LinkDialog.prototype.setStopReferrerLeaks = function(stop) {
   this.stopReferrerLeaks_ = stop;
+};
+
+
+/**
+ * Tells the plugin whether to remove access to the current window object in the
+ * newly created window when the "test this link" is clicked, since it can be
+ * used to launch a reverse tabnabbing attack.
+ * @param {boolean} stop Whether to remove the reference to the current window
+ *     in the new window.
+ */
+goog.ui.editor.LinkDialog.prototype.setStopTabNabbing = function(stop) {
+  this.stopTabNabbing_ = stop;
 };
 
 
@@ -925,7 +944,10 @@ goog.ui.editor.LinkDialog.prototype.onWebTestLink_ = function() {
       scrollbars: true,
       location: true,
       statusbar: false,
-      menubar: true, 'resizable': true, 'noreferrer': this.stopReferrerLeaks_
+      menubar: true,
+      resizable: true,
+      noreferrer: this.stopReferrerLeaks_,
+      noopener: this.stopTabNabbing_
     };
     goog.window.open(url, openOptions, win);
   }

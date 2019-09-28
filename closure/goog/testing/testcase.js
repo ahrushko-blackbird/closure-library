@@ -162,14 +162,14 @@ goog.testing.TestCase = function(opt_name) {
    * <li>[1,3,5]
    * <li>[testName1, testName2, 3, 5] - will work
    * <ul>
-   * @type {Object}
+   * @type {?Object}
    * @private
    */
   this.testsToRun_ = null;
 
   /**
    * A call back for each test.
-   * @private {?function(goog.testing.TestCase.Test, !Array<string>)}
+   * @private {?function(?goog.testing.TestCase.Test, !Array<string>)}
    */
   this.testDone_ = null;
 
@@ -201,13 +201,6 @@ goog.testing.TestCase = function(opt_name) {
    * @private {!Array<!goog.testing.JsUnitException>}
    */
   this.thrownAssertionExceptions_ = [];
-
-  /**
-   * Whether the test should fail if exceptions arising from an assert statement
-   * never bubbled up to the testing framework.
-   * @type {boolean}
-   */
-  this.failOnUnreportedAsserts = true;
 
   /**
    * The maximum time in milliseconds a promise returned from a test function
@@ -306,8 +299,10 @@ goog.testing.TestCase.protectedDate_ = Date;
  * @type {?Performance}
  * @private
  */
-goog.testing.TestCase.protectedPerformance_ =
-    window.performance && window.performance.now ? performance : null;
+goog.testing.TestCase.protectedPerformance_ = typeof window !== 'undefined' &&
+        window.performance && window.performance.now ?
+    performance :
+    null;
 
 
 /**
@@ -558,7 +553,12 @@ goog.testing.TestCase.prototype.prepareForRun_ = function() {
 goog.testing.TestCase.prototype.finalize = function() {
   this.saveMessage('Done');
 
-  this.tearDownPage();
+  try {
+    this.tearDownPage();
+  } catch (e) {
+    // Report the error and continue with tests.
+    window['onerror'](e.toString(), document.location.href, 0, 0, e);
+  }
 
   this.endTime_ = this.now();
   this.running = false;
@@ -1387,8 +1387,22 @@ goog.testing.TestCase.prototype.setLifecycleObj = function(obj) {
 goog.testing.TestCase.prototype.setTestObj = function(obj) {
   // Check any previously added (likely auto-discovered) tests, only one source
   // of discovered test and life-cycle methods is allowed.
-  goog.asserts.assert(
-      this.tests_.length == 0, 'Test methods have already been configured.');
+  if (this.tests_.length > 0) {
+    fail(
+        'Test methods have already been configured.\n' +
+        'Tests previously found:\n' +
+        this.tests_
+            .map(function(test) {
+              return test.name;
+            })
+            .join('\n') +
+        '\nNew tests found:\n' +
+        Object.keys(obj)
+            .filter(function(name) {
+              return name.startsWith('test');
+            })
+            .join('\n'));
+  }
   this.shouldAutoDiscoverTests_ = false;
   if (obj['getTestName']) {
     this.name_ = obj['getTestName']();
@@ -1430,6 +1444,7 @@ goog.testing.TestCase.prototype.addTestObj_ = function(obj, name, objChain) {
       } else if (goog.isObject(testProperty)) {
         // To prevent infinite loops.
         if (!goog.array.contains(objChain, testProperty)) {
+          goog.asserts.assertObject(testProperty);
           var newObjChain = objChain.slice();
           newObjChain.push(testProperty);
           this.addTestObj_(testProperty, fullTestName, newObjChain);
@@ -1652,6 +1667,26 @@ goog.testing.TestCase.prototype.doSkipped = function(test) {
 };
 
 
+/**
+ * Records an error that fails the current test, without throwing it.
+ *
+ * Use this function to implement expect()-style assertion libraries that fail a
+ * test without breaking execution (so you can see further failures). Do not use
+ * this from normal test code.
+ *
+ * Please contact js-core-libraries-team@ before using this method.  If it grows
+ * popular, we may add an expect() API to Closure.
+ *
+ * NOTE: If there is no active TestCase, you must throw an error.
+ * @param {!Error} error The error to log.  If it is a JsUnitException which has
+ *     already been logged, nothing will happen.
+ */
+goog.testing.TestCase.prototype.recordTestError = function(error) {
+  this.recordError(
+      this.curTest_ ? this.curTest_.name : '<No active test>', error);
+};
+
+
 
 /**
  * Records and logs an error from or related to a test.
@@ -1712,9 +1747,7 @@ goog.testing.TestCase.prototype.doError = function(test) {
  * @package
  */
 goog.testing.TestCase.prototype.raiseAssertionException = function(e) {
-  if (this.failOnUnreportedAsserts) {
-    this.thrownAssertionExceptions_.push(e);
-  }
+  this.thrownAssertionExceptions_.push(e);
   throw e;
 };
 
@@ -1728,9 +1761,7 @@ goog.testing.TestCase.prototype.raiseAssertionException = function(e) {
  * @package
  */
 goog.testing.TestCase.prototype.invalidateAssertionException = function(e) {
-  if (this.failOnUnreportedAsserts) {
-    goog.array.remove(this.thrownAssertionExceptions_, e);
-  }
+  goog.array.remove(this.thrownAssertionExceptions_, e);
 };
 
 
@@ -1746,7 +1777,7 @@ goog.testing.TestCase.prototype.logError = function(name, error) {
   var stack = null;
   if (error) {
     this.log(error);
-    if (goog.isString(error)) {
+    if (typeof error === 'string') {
       errMsg = error;
     } else {
       errMsg = error.message || error.description || error.toString();

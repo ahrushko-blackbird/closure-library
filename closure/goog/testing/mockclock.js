@@ -138,7 +138,7 @@ goog.testing.MockClock.prototype.callbacksTriggered_ = 0;
 /**
  * PropertyReplacer instance which overwrites and resets setTimeout,
  * setInterval, etc. or null if the MockClock is not installed.
- * @type {goog.testing.PropertyReplacer}
+ * @type {?goog.testing.PropertyReplacer}
  * @private
  */
 goog.testing.MockClock.prototype.replacer_ = null;
@@ -211,6 +211,16 @@ goog.testing.MockClock.prototype.install = function() {
     this.oldGoogNow_ = goog.now;
     goog.now = goog.bind(this.getCurrentTime, this);
   }
+};
+
+
+/**
+ * Unmocks the Date.now() function for tests that aren't expecting it to be
+ * mocked. See b/141619890.
+ * @deprecated
+ */
+goog.testing.MockClock.prototype.unmockDateNow = function() {
+  // TODO(b/141619890): Implement.
 };
 
 

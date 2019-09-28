@@ -62,7 +62,8 @@ goog.require('goog.userAgent');
  * reflow. If layerX or layerY is not defined, offsetX and offsetY will be used
  * as usual.
  */
-goog.define('goog.events.USE_LAYER_XY_AS_OFFSET_XY', false);
+goog.events.USE_LAYER_XY_AS_OFFSET_XY =
+    goog.define('goog.events.USE_LAYER_XY_AS_OFFSET_XY', false);
 
 /**
  * Accepts a browser event object and creates a patched, cross browser event
@@ -80,20 +81,20 @@ goog.events.BrowserEvent = function(opt_e, opt_currentTarget) {
   /**
    * Target that fired the event.
    * @override
-   * @type {Node}
+   * @type {?Node}
    */
   this.target = null;
 
   /**
    * Node that had the listener attached.
    * @override
-   * @type {Node|undefined}
+   * @type {?Node|undefined}
    */
   this.currentTarget = null;
 
   /**
    * For mouseover and mouseout events, the related object for the event.
-   * @type {Node}
+   * @type {?Node}
    */
   this.relatedTarget = null;
 
@@ -184,7 +185,7 @@ goog.events.BrowserEvent = function(opt_e, opt_currentTarget) {
   /**
    * History state object, only set for PopState events where it's a copy of the
    * state object provided to pushState or replaceState.
-   * @type {Object}
+   * @type {?Object}
    */
   this.state = null;
 
@@ -207,7 +208,7 @@ goog.events.BrowserEvent = function(opt_e, opt_currentTarget) {
 
   /**
    * The browser event object.
-   * @private {Event}
+   * @private {?Event}
    */
   this.event_ = null;
 
@@ -472,7 +473,7 @@ goog.events.BrowserEvent.prototype.getBrowserEvent = function() {
  * @private
  */
 goog.events.BrowserEvent.getPointerType_ = function(e) {
-  if (goog.isString(e.pointerType)) {
+  if (typeof (e.pointerType) === 'string') {
     return e.pointerType;
   }
   // IE10 uses integer codes for pointer type.

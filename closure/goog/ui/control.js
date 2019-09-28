@@ -79,7 +79,7 @@ goog.ui.Control = function(opt_content, opt_renderer, opt_domHelper) {
   goog.ui.Component.call(this, opt_domHelper);
   this.renderer_ =
       opt_renderer || goog.ui.registry.getDefaultRenderer(this.constructor);
-  this.setContentInternal(goog.isDef(opt_content) ? opt_content : null);
+  this.setContentInternal(opt_content !== undefined ? opt_content : null);
 
   /** @private {?string} The control's aria-label. */
   this.ariaLabel_ = null;
@@ -134,7 +134,7 @@ goog.ui.Control.prototype.renderer_;
 
 /**
  * Text caption or DOM structure displayed in the component.
- * @type {goog.ui.ControlContent}
+ * @type {?goog.ui.ControlContent}
  * @private
  */
 goog.ui.Control.prototype.content_ = null;
@@ -730,7 +730,7 @@ goog.ui.Control.prototype.getCaption = function() {
   if (!content) {
     return '';
   }
-  var caption = goog.isString(content) ?
+  var caption = (typeof content === 'string') ?
       content :
       goog.isArray(content) ?
       goog.array.map(content, goog.dom.getRawTextContent).join('') :
@@ -1494,9 +1494,10 @@ goog.ui.Control.IeMouseEventSequenceSimulator_ = function(control) {
   this.registerDisposable(this.handler_);
 
   var element = this.control_.getElementStrict();
-  this.handler_
-      .listen(element, goog.events.EventType.MOUSEDOWN, this.handleMouseDown_)
-      .listen(element, goog.events.EventType.MOUSEUP, this.handleMouseUp_)
+  var MouseEventType = goog.ui.ComponentUtil.getMouseEventType(control);
+
+  this.handler_.listen(element, MouseEventType.MOUSEDOWN, this.handleMouseDown_)
+      .listen(element, MouseEventType.MOUSEUP, this.handleMouseUp_)
       .listen(element, goog.events.EventType.CLICK, this.handleClick_);
 };
 goog.inherits(goog.ui.Control.IeMouseEventSequenceSimulator_, goog.Disposable);

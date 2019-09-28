@@ -87,7 +87,7 @@ goog.ui.SliderBase = function(opt_domHelper, opt_labelFn) {
   /**
    * The factory to use to generate additional animations when animating to a
    * new value.
-   * @type {goog.ui.SliderBase.AnimationFactory}
+   * @type {?goog.ui.SliderBase.AnimationFactory}
    * @private
    */
   this.additionalAnimations_ = null;
@@ -768,7 +768,7 @@ goog.ui.SliderBase.prototype.handleTimerTick_ = function() {
     }
   }
 
-  if (goog.isDef(value)) {  // not all code paths sets the value variable
+  if (value !== undefined) {  // not all code paths sets the value variable
     this.setThumbPosition_(this.thumbToMove_, value);
   }
 };
@@ -1598,12 +1598,12 @@ goog.ui.SliderBase.prototype.enableMouseWheelHandling_ = function(enable) {
     this.getHandler().listen(
         this.mouseWheelHandler_,
         goog.events.MouseWheelHandler.EventType.MOUSEWHEEL,
-        this.handleMouseWheel_);
+        this.handleMouseWheel_, {passive: false});
   } else {
     this.getHandler().unlisten(
         this.mouseWheelHandler_,
         goog.events.MouseWheelHandler.EventType.MOUSEWHEEL,
-        this.handleMouseWheel_);
+        this.handleMouseWheel_, {passive: false});
   }
 };
 
